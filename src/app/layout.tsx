@@ -1,21 +1,23 @@
-import type { Metadata } from 'next'
-import './globals.css'
+import type { Metadata } from "next";
+import "./globals.css";
+import Providers from "./provider";
 
-// Metadata is a Next.js feature — it sets the <title> and description
-// that Google and browser tabs show. No more helmet library needed.
 export const metadata: Metadata = {
-  title: 'CodeCollab — Real-time Collaborative Editor',
-  description: 'Code together, in real time',
-}
+  title: "CodeCollab — Real-time Collaborative Editor",
+  description: "Create a room, share the link, code together in real time.",
+};
 
 export default function RootLayout({
-  children, // children = whatever page is currently being shown
+  children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {/* Providers wraps everything so Liveblocks hooks work anywhere in the tree */}
+        <Providers>{children}</Providers>
+      </body>
     </html>
-  )
+  );
 }
