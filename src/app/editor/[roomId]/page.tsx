@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { RoomProvider } from "@liveblocks/react";
-// ^ In v2 you import directly from @liveblocks/react, not from a config file
-
 import { USER_COLORS, STARTER_CODE } from "@/lib/constants";
 import EditorLayout from "@/components/EditorLayout";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function EditorPage() {
   const params = useParams();
@@ -19,11 +18,16 @@ export default function EditorPage() {
 
   useEffect(() => {
     const savedName = localStorage.getItem("codecollab_username");
+
+    // If someone opens this URL directly without entering a name,
+    // redirect them to the homepage to enter their name first
     if (!savedName) {
       router.push("/");
       return;
     }
+
     setUserName(savedName);
+    // Give this user a random color from our palette
     setUserColor(USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)]);
     setIsReady(true);
   }, [router]);
@@ -40,16 +44,22 @@ export default function EditorPage() {
   }
 
   return (
-    <RoomProvider
-      id={roomId}
-      initialPresence={{ name: userName, color: userColor }}
-      initialStorage={{
-        // In v2, plain string/values work directly in initialStorage
-        code: STARTER_CODE["typescript"],
-        language: "typescript",
-      }}
-    >
-      <EditorLayout />
-    </RoomProvider>
+    <ErrorBoundary>
+      <RoomProvider
+        id={roomId}
+        initialPresence={{ name: userName, color: userColor }}
+        initialStorage={{
+          code: STARTER_CODE["typescript"],
+          language: "typescript",
+        }}
+      >
+        {/* Pass user info down so EditorLayout and ChatPanel know who you are */}
+        <EditorLayout
+          roomId={roomId}
+          userName={userName}
+          userColor={userColor}
+        />
+      </RoomProvider>
+    </ErrorBoundary>
   );
 }
