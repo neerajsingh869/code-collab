@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚡ CodeCollab — Real-time Collaborative Code Editor
 
-## Getting Started
+A collaborative code editor where multiple users edit code simultaneously,
+see each other's presence, run code in the browser, and chat — all in real time.
 
-First, run the development server:
+🔗 **Live Demo:** [codecollab.vercel.app](https://code-collab-six-silk.vercel.app)
+
+---
+
+## Features
+
+- **Real-time collaboration** — Type and see changes instantly across all connected users
+- **Monaco Editor** — The same engine that powers VS Code, running in the browser
+- **Live user presence** — See who's in the room with colored avatars
+- **Sandboxed code execution** — Run JS/TS safely using Blob URL iframe isolation
+- **Live chat** — Message teammates without leaving the editor
+- **Shareable rooms** — Just copy the URL and send it — no signup needed
+
+---
+
+## Tech Stack
+
+| Tool              | Why                                        |
+| ----------------- | ------------------------------------------ |
+| **Next.js 16**    | App Router, file-based routing, SSR        |
+| **TypeScript**    | Type safety across the full codebase       |
+| **Monaco Editor** | VS Code editing experience in the browser  |
+| **Liveblocks**    | Real-time sync, presence, broadcast events |
+| **Zustand**       | Lightweight state management for local UI  |
+| **Tailwind CSS**  | Utility-first styling                      |
+| **Vercel**        | Zero-config deployment                     |
+
+---
+
+## Architecture Decisions
+
+**Why Liveblocks over raw WebSockets?**
+Building WebSocket infrastructure from scratch means handling reconnections,
+conflict resolution, and scaling. Liveblocks provides all of this out of the box,
+including CRDT-based conflict resolution so simultaneous edits never lose data.
+
+**Why Blob URL iframe for code execution?**
+`eval()` runs code with full access to our app — a serious security risk.
+We create a Blob URL and load it in an `<iframe>` — this gives the iframe
+a completely separate `blob:` origin, so it cannot access our app's DOM,
+localStorage, or variables. Output is passed back safely via `postMessage`.
+We also call `URL.revokeObjectURL()` after execution to free memory.
+
+**Why Zustand for some state, Liveblocks for other?**
+Liveblocks handles _shared_ state (code content, language) that all users need.
+Zustand handles _local_ UI state (panels, output lines, chat messages) that only
+the current user cares about. Mixing them would unnecessarily sync UI preferences
+across users and cause unintended re-renders.
+
+**Why is chat ephemeral (cleared on refresh)?**
+Chat uses Liveblocks broadcast events which are fire-and-forget — they reach all
+live users instantly but aren't persisted. This is intentional: a code session's
+chat doesn't need history. If persistence were needed, Liveblocks Storage or a
+database would be the right addition.
+
+---
+
+## Local Setup
 
 ```bash
+# 1. Clone and install
+git clone https://github.com/your-username/code-collab
+cd code-collab
+npm install
+
+# 2. Get a free Liveblocks API key at liveblocks.io
+# 3. Add to .env.local
+echo "NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY=pk_your_key" > .env.local
+
+# 4. Run
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [localhost:3000](http://localhost:3000), enter your name, create a room.
+Open a second tab with the same URL — you're now collaborating in real time.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+  app/
+    page.tsx                       # Homepage — enter name, create room
+    layout.tsx                     # Root layout with LiveblocksProvider
+    provider.tsx                   # LiveblocksProvider client component
+    editor/[roomId]/page.tsx       # Dynamic route — each room is a URL
+  components/
+    EditorLayout.tsx               # Main layout — header + all panels
+    CollaborativeEditor.tsx        # Monaco Editor + Liveblocks sync
+    ChatPanel.tsx                  # Real-time chat via broadcast events
+    OutputPanel.tsx                # Code execution output display
+    UserPresence.tsx               # Online user avatars
+    ErrorBoundary.tsx              # Graceful error handling
+  lib/
+    executeCode.ts                 # Blob URL iframe sandboxed code runner
+    constants.ts                   # Languages, starter code, user colors
+  store/
+    useEditorStore.ts              # Zustand — local UI state only
+  types/
+    index.ts                       # Shared TypeScript types
+  liveblocks.config.ts             # Liveblocks global type declarations
+```
