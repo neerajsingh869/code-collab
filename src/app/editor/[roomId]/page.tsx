@@ -14,7 +14,6 @@ export default function EditorPage() {
 
   const [userName, setUserName] = useState("");
   const [userColor, setUserColor] = useState("");
-  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const savedName = localStorage.getItem("codecollab_username");
@@ -26,13 +25,15 @@ export default function EditorPage() {
       return;
     }
 
+    // localStorage isn't available during SSR, so this has to wait until
+    // after mount — that's a legitimate use of an effect, not a workaround.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUserName(savedName);
     // Give this user a random color from our palette
     setUserColor(USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)]);
-    setIsReady(true);
   }, [router]);
 
-  if (!isReady) {
+  if (!userName) {
     return (
       <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
