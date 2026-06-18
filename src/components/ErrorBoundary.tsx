@@ -2,19 +2,13 @@
 
 import { Component, ReactNode } from "react";
 
-// React Error Boundaries catch JS errors in the component tree
-// They prevent the whole app from crashing — show a friendly message instead
-// Must be a class component — this is a known React limitation
-// (hooks like useErrorBoundary don't exist natively yet)
-
+// must be a class component — no hook equivalent for error boundaries yet
 type Props = { children: ReactNode };
 type State = { hasError: boolean; message: string };
 
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, message: "" };
 
-  // React calls this when a child component throws
-  // Returns new state to trigger the fallback UI
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, message: error.message };
   }

@@ -1,22 +1,14 @@
 import type { OutputLine } from "@/types";
 
-// Why Blob URL instead of srcdoc with sandbox?
-// sandbox="allow-scripts" blocks parent.postMessage in some browsers
-// because the sandboxed iframe treats parent as inaccessible.
-//
-// Blob URLs solve this cleanly:
-// - The iframe gets a unique blob: origin — completely isolated from our app
-// - window.parent.postMessage() works fine from a blob origin with wildcard *
-// - No sandbox attribute needed — the different origin provides natural isolation
-// - Works consistently across all modern browsers
+// blob: URL instead of srcdoc+sandbox — sandbox="allow-scripts" blocks
+// postMessage back to the parent in some browsers. A blob: origin isolates
+// the iframe from our app just as well, without that restriction.
 
 export const executeCode = (
   code: string,
   onOutput: (line: OutputLine) => void,
 ): Promise<void> => {
   return new Promise((resolve) => {
-    // Build the full HTML page that will run inside the iframe
-    // console.log and console.error are overridden to send output back via postMessage
     const html = `<!DOCTYPE html>
 <html>
 <body>
@@ -62,7 +54,6 @@ export const executeCode = (
 </body>
 </html>`;
 
-    // Create a Blob URL — gives the iframe its own isolated blob: origin
     const blob = new Blob([html], { type: "text/html" });
     const blobUrl = URL.createObjectURL(blob);
 
@@ -70,7 +61,7 @@ export const executeCode = (
     iframe.style.display = "none";
     iframe.style.position = "absolute";
 
-    // Kill after 5 seconds to prevent infinite loops hanging the browser
+    // 5s ceiling so an infinite loop in the user's code can't hang the tab
     const timeout = setTimeout(() => {
       onOutput({
         type: "error",
@@ -82,7 +73,6 @@ export const executeCode = (
     const cleanup = () => {
       clearTimeout(timeout);
       window.removeEventListener("message", handleMessage);
-      // Always revoke the blob URL to free memory
       URL.revokeObjectURL(blobUrl);
       if (document.body.contains(iframe)) {
         document.body.removeChild(iframe);
@@ -103,7 +93,6 @@ export const executeCode = (
 
     window.addEventListener("message", handleMessage);
 
-    // Set src to blob URL and add to DOM — this triggers the script to run
     iframe.src = blobUrl;
     document.body.appendChild(iframe);
   });

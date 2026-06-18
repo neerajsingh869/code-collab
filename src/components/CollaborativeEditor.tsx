@@ -1,7 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useStorage, useMutation, useOthers } from "@liveblocks/react";
+import { useDebouncedCallback } from "@/lib/useDebouncedCallback";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -14,15 +16,38 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 
+const SYNC_DELAY_MS = 200;
+
 export default function CollaborativeEditor() {
   const code = useStorage((root) => root.code);
   const language = useStorage((root) => root.language);
   const others = useOthers();
 
   const updateCode = useMutation(({ storage }, newCode: string) => {
-    // In v2, storage.set works the same way for top-level keys
     storage.set("code", newCode);
   }, []);
+
+  // Typing stays instant locally; the write to shared storage is debounced
+  // so we're not hitting the network on every keystroke. `lastSynced` tracks
+  // what we last sent, so a remote update isn't mistaken for an echo of our
+  // own write — only adopt it into local state if it's genuinely someone else's.
+  const [localCode, setLocalCode] = useState(code ?? "");
+  const lastSynced = useRef(localCode);
+
+  useLayoutEffect(() => {
+    if (code !== null && code !== lastSynced.current) {
+      // Adopting a remote Liveblocks update into local state — a legitimate
+      // external-system sync, not state derived from props/render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocalCode(code);
+      lastSynced.current = code;
+    }
+  }, [code]);
+
+  const syncCode = useDebouncedCallback((newCode: string) => {
+    lastSynced.current = newCode;
+    updateCode(newCode);
+  }, SYNC_DELAY_MS);
 
   if (code === null || language === null) {
     return (
@@ -51,9 +76,11 @@ export default function CollaborativeEditor() {
       <MonacoEditor
         height="100%"
         language={String(language)}
-        value={String(code)}
+        value={localCode}
         onChange={(value) => {
-          if (value !== undefined) updateCode(value);
+          if (value === undefined) return;
+          setLocalCode(value);
+          syncCode(value);
         }}
         theme="vs-dark"
         options={{

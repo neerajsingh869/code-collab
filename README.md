@@ -36,8 +36,14 @@ see each other's presence, run code in the browser, and chat — all in real tim
 
 **Why Liveblocks over raw WebSockets?**
 Building WebSocket infrastructure from scratch means handling reconnections,
-conflict resolution, and scaling. Liveblocks provides all of this out of the box,
-including CRDT-based conflict resolution so simultaneous edits never lose data.
+presence, and broadcast messaging by hand. Liveblocks provides all of that out
+of the box. One caveat worth being upfront about: the `code` field here is a
+single Storage value overwritten on every edit (last-write-wins), not a
+character-level CRDT merge — two people editing the exact same spot at the
+same instant can clobber each other. Liveblocks does offer CRDT-backed Yjs
+storage for true concurrent text merging; that's a heavier dependency this
+project deliberately doesn't pull in yet, in favor of staying simple and
+fully explainable.
 
 **Why Blob URL iframe for code execution?**
 `eval()` runs code with full access to our app — a serious security risk.

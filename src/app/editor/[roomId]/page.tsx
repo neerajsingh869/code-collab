@@ -18,8 +18,7 @@ export default function EditorPage() {
   useEffect(() => {
     const savedName = localStorage.getItem("codecollab_username");
 
-    // If someone opens this URL directly without entering a name,
-    // redirect them to the homepage to enter their name first
+    // direct link, no saved name — send them to enter one first
     if (!savedName) {
       router.push("/");
       return;
@@ -29,7 +28,6 @@ export default function EditorPage() {
     // after mount — that's a legitimate use of an effect, not a workaround.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setUserName(savedName);
-    // Give this user a random color from our palette
     setUserColor(USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)]);
   }, [router]);
 
@@ -54,7 +52,6 @@ export default function EditorPage() {
           language: "typescript",
         }}
       >
-        {/* Pass user info down so EditorLayout and ChatPanel know who you are */}
         <EditorLayout
           roomId={roomId}
           userName={userName}

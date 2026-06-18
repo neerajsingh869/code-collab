@@ -18,9 +18,7 @@ export default function ChatPanel({ userName, userColor }: Props) {
   const { messages, addMessage, toggleChat } = useEditorStore();
   const broadcast = useBroadcastEvent();
 
-  // This receives messages from OTHER users in the room
-  // Liveblocks does NOT send your own broadcast back to you
-  // That's why we add our own message to state directly when sending
+  // Liveblocks doesn't echo our own broadcasts back — handled in sendMessage below
   useEventListener(({ event }) => {
     if (event.type === "CHAT_MESSAGE") {
       addMessage({
@@ -33,7 +31,6 @@ export default function ChatPanel({ userName, userColor }: Props) {
     }
   });
 
-  // Auto scroll to latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -50,10 +47,8 @@ export default function ChatPanel({ userName, userColor }: Props) {
       timestamp: Date.now(),
     };
 
-    // Add to YOUR local state immediately so you see your own message
     addMessage(msg);
 
-    // Broadcast to everyone else in the room
     broadcast({
       type: "CHAT_MESSAGE",
       ...msg,

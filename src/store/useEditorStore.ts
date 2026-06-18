@@ -1,10 +1,8 @@
 import { create } from "zustand";
 import type { OutputLine, ChatMessage } from "@/types";
 
-// Zustand manages LOCAL UI state — things only the current user cares about
-// (panels open/closed, output lines, chat messages)
-// We use Zustand instead of useState because multiple components share this state
-// without needing to pass props up and down the tree
+// local-only UI state (panels, output, chat) — kept separate from Liveblocks
+// storage so it never syncs across users
 
 type EditorStore = {
   // Panel visibility

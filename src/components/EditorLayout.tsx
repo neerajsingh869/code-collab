@@ -34,11 +34,9 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
     setIsRunning,
   } = useEditorStore();
 
-  // Read shared state from Liveblocks — these update for ALL users when changed
   const language = useStorage((root) => root.language);
   const code = useStorage((root) => root.code);
 
-  // Write language to Liveblocks — all users switch language together
   const updateLanguage = useMutation(({ storage }, lang: Language) => {
     storage.set("language", lang);
   }, []);
@@ -53,10 +51,9 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
     if (!code || isRunning) return;
     clearOutput();
     setIsRunning(true);
-    openOutput(); // slide open the output panel automatically
+    openOutput();
 
-    // Note for TypeScript: type annotations are stripped at runtime in the browser
-    // so TypeScript code runs as JavaScript — interfaces, types etc are ignored
+    // TS types are stripped, not checked, when it runs as plain JS in-browser
     if (language === "typescript") {
       addOutputLine({
         type: "log",
@@ -68,25 +65,22 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
     setIsRunning(false);
   };
 
-  // Don't render until Liveblocks has loaded the room data
   if (!language) return null;
 
   return (
     <div className="h-screen flex flex-col bg-[#0d1117] overflow-hidden">
-      {/* ── HEADER ───────────────────────────────────────── */}
       <header className="h-12 bg-[#161b22] border-b border-[#30363d] flex items-center px-4 gap-3 flex-shrink-0">
         <span className="text-blue-400 font-semibold text-sm tracking-wide">
           ⚡ CodeCollab
         </span>
 
-        {/* Room ID — subtle reference */}
         <span className="text-gray-700 text-xs font-mono hidden sm:block">
           #{roomId}
         </span>
 
         <div className="flex-1" />
 
-        {/* Language selector — changing this updates everyone in the room */}
+        {/* shared across the room — switching language switches it for everyone */}
         <select
           value={language}
           onChange={(e) => updateLanguage(e.target.value as Language)}
@@ -100,10 +94,8 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
           ))}
         </select>
 
-        {/* Live user avatars */}
         <UserPresence />
 
-        {/* Copy shareable URL */}
         <button
           onClick={handleCopyLink}
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white
@@ -123,7 +115,6 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
           )}
         </button>
 
-        {/* Run button — only enabled for JS/TS, disabled for Python and CSS */}
         {RUNNABLE_LANGUAGES.includes(language) ? (
           <button
             onClick={handleRunCode}
@@ -136,7 +127,6 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
             {isRunning ? "Running..." : "Run"}
           </button>
         ) : (
-          // For CSS and Python — show a greyed out button with a tooltip explaining why
           <div
             title={`${language === "css" ? "CSS" : "Python"} cannot run in the browser — switch to JavaScript to execute code`}
             className="flex items-center gap-1.5 text-xs text-gray-600
@@ -148,7 +138,6 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
           </div>
         )}
 
-        {/* Toggle chat panel */}
         <button
           onClick={toggleChat}
           className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border
@@ -163,16 +152,12 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
         </button>
       </header>
 
-      {/* ── MAIN AREA ────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left: editor + output panel stacked */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Editor takes remaining height. Shrinks when output is open */}
           <div className={isOutputOpen ? "h-[60%]" : "h-full"}>
             <CollaborativeEditor />
           </div>
 
-          {/* Output panel slides in from the bottom */}
           {isOutputOpen && (
             <div className="h-[40%] border-t border-[#30363d] flex-shrink-0">
               <OutputPanel />
@@ -180,7 +165,6 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
           )}
         </div>
 
-        {/* Right: chat panel */}
         {isChatOpen && (
           <div className="w-72 border-l border-[#30363d] flex-shrink-0">
             <ChatPanel userName={userName} userColor={userColor} />
