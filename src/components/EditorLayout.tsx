@@ -6,6 +6,7 @@ import { useStorage, useMutation } from "@liveblocks/react";
 import { useEditorStore } from "@/store/useEditorStore";
 import { LANGUAGES } from "@/lib/constants";
 import { executeCode } from "@/lib/executeCode";
+import { transpileTypeScript } from "@/lib/transpileTypeScript";
 import type { Language } from "@/types";
 import CollaborativeEditor from "./CollaborativeEditor";
 import OutputPanel from "./OutputPanel";
@@ -53,15 +54,26 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
     setIsRunning(true);
     openOutput();
 
-    // TS types are stripped, not checked, when it runs as plain JS in-browser
+    let source = code;
+
     if (language === "typescript") {
       addOutputLine({
         type: "log",
-        text: "// Note: running as JavaScript (type annotations are ignored)",
+        text: "// Compiled to JavaScript — type errors show in the editor, not here",
       });
+      try {
+        source = await transpileTypeScript(code);
+      } catch {
+        addOutputLine({
+          type: "error",
+          text: "Error: could not compile TypeScript",
+        });
+        setIsRunning(false);
+        return;
+      }
     }
 
-    await executeCode(code, (line) => addOutputLine(line));
+    await executeCode(source, (line) => addOutputLine(line));
     setIsRunning(false);
   };
 
