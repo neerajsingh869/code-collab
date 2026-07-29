@@ -10,19 +10,24 @@ export const LANGUAGES: { id: Language; label: string }[] = [
 
 // Default code shown when a room is first created
 export const STARTER_CODE: Record<Language, string> = {
-  typescript: `// Welcome to CodeCollab ⚡
-// Everyone in this room sees your changes in real time
+  typescript: `// Welcome to CodeCollab
+// Share this URL and everyone sees your changes as you type
 
-interface User {
-  name: string
-  targetSalary: number
+interface Task {
+  id: number
+  title: string
+  done: boolean
 }
 
-const getWealthy = (user: User): string => {
-  return \`\${user.name} is on the way to ₹4L/month!\`
-}
+const tasks: Task[] = [
+  { id: 1, title: 'Open a room', done: true },
+  { id: 2, title: 'Send someone the link', done: false },
+  { id: 3, title: 'Edit this file together', done: false },
+]
 
-console.log(getWealthy({ name: 'You', targetSalary: 400000 }))
+const remaining = tasks.filter((task) => !task.done)
+
+console.log(\`\${remaining.length} left:\`, remaining.map((task) => task.title))
 `,
   javascript: `// JavaScript starter
 function greet(name) {
