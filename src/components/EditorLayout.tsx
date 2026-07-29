@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Copy, Check, Play, MessageSquare } from "lucide-react";
-import { useStorage, useMutation } from "@liveblocks/react";
+import { useStorage, useMutation, useEventListener } from "@liveblocks/react";
 import { useEditorStore } from "@/store/useEditorStore";
 import { LANGUAGES } from "@/lib/constants";
 import { executeCode } from "@/lib/executeCode";
@@ -27,13 +27,30 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
   const {
     isChatOpen,
     isOutputOpen,
+    unreadCount,
     toggleChat,
     openOutput,
     addOutputLine,
+    addMessage,
     clearOutput,
     isRunning,
     setIsRunning,
   } = useEditorStore();
+
+  // Lives here, not in ChatPanel: the panel unmounts when it's closed, so a
+  // listener inside it missed every message sent while the panel was shut.
+  // Liveblocks doesn't echo our own broadcasts back, so we add ours on send.
+  useEventListener(({ event }) => {
+    if (event.type === "CHAT_MESSAGE") {
+      addMessage({
+        id: event.id,
+        user: event.user,
+        color: event.color,
+        text: event.text,
+        timestamp: event.timestamp,
+      });
+    }
+  });
 
   const language = useStorage((root) => root.language);
   const code = useStorage((root) => root.code);
@@ -161,6 +178,11 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
         >
           <MessageSquare size={12} />
           Chat
+          {unreadCount > 0 && (
+            <span className="bg-blue-500 text-white text-[10px] leading-none min-w-4 px-1 py-0.5 rounded-full">
+              {unreadCount}
+            </span>
+          )}
         </button>
       </header>
 

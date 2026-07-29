@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { nanoid } from "nanoid";
-import { useBroadcastEvent, useEventListener } from "@liveblocks/react";
+import { useBroadcastEvent } from "@liveblocks/react";
 import { useEditorStore } from "@/store/useEditorStore";
 import type { ChatMessage } from "@/types";
 
@@ -17,19 +17,6 @@ export default function ChatPanel({ userName, userColor }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { messages, addMessage, toggleChat } = useEditorStore();
   const broadcast = useBroadcastEvent();
-
-  // Liveblocks doesn't echo our own broadcasts back — handled in sendMessage below
-  useEventListener(({ event }) => {
-    if (event.type === "CHAT_MESSAGE") {
-      addMessage({
-        id: event.id,
-        user: event.user,
-        color: event.color,
-        text: event.text,
-        timestamp: event.timestamp,
-      });
-    }
-  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

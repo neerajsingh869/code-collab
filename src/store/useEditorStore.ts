@@ -8,6 +8,7 @@ type EditorStore = {
   // Panel visibility
   isChatOpen: boolean;
   isOutputOpen: boolean;
+  unreadCount: number;
   toggleChat: () => void;
   toggleOutput: () => void;
   openOutput: () => void;
@@ -27,7 +28,12 @@ type EditorStore = {
 export const useEditorStore = create<EditorStore>((set) => ({
   isChatOpen: false,
   isOutputOpen: false,
-  toggleChat: () => set((s) => ({ isChatOpen: !s.isChatOpen })),
+  unreadCount: 0,
+  toggleChat: () =>
+    set((s) => ({
+      isChatOpen: !s.isChatOpen,
+      unreadCount: s.isChatOpen ? s.unreadCount : 0,
+    })),
   toggleOutput: () => set((s) => ({ isOutputOpen: !s.isOutputOpen })),
   openOutput: () => set({ isOutputOpen: true }),
 
@@ -39,5 +45,9 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setIsRunning: (val) => set({ isRunning: val }),
 
   messages: [],
-  addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
+  addMessage: (msg) =>
+    set((s) => ({
+      messages: [...s.messages, msg],
+      unreadCount: s.isChatOpen ? s.unreadCount : s.unreadCount + 1,
+    })),
 }));
