@@ -15,7 +15,9 @@ type Props = {
 export default function ChatPanel({ userName, userColor }: Props) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { messages, addMessage, toggleChat } = useEditorStore();
+  const messages = useEditorStore((s) => s.messages);
+  const addMessage = useEditorStore((s) => s.addMessage);
+  const toggleChat = useEditorStore((s) => s.toggleChat);
   const broadcast = useBroadcastEvent();
 
   useEffect(() => {

@@ -4,8 +4,10 @@ import { Trash2, X } from "lucide-react";
 import { useEditorStore } from "@/store/useEditorStore";
 
 export default function OutputPanel() {
-  const { outputLines, clearOutput, toggleOutput, isRunning } =
-    useEditorStore();
+  const outputLines = useEditorStore((s) => s.outputLines);
+  const isRunning = useEditorStore((s) => s.isRunning);
+  const clearOutput = useEditorStore((s) => s.clearOutput);
+  const toggleOutput = useEditorStore((s) => s.toggleOutput);
 
   return (
     <div className="h-full flex flex-col bg-[#0d1117]">

@@ -24,19 +24,23 @@ type Props = {
 export default function EditorLayout({ roomId, userName, userColor }: Props) {
   const [copied, setCopied] = useState(false);
 
-  const {
-    isChatOpen,
-    isOutputOpen,
-    unreadCount,
-    toggleChat,
-    openOutput,
-    addOutputLine,
-    addMessage,
-    clearOutput,
-    isRunning,
-    setIsRunning,
-    reset,
-  } = useEditorStore();
+  // One selector per value rather than destructuring the whole store. Calling
+  // useEditorStore() with no selector subscribes to every field, so appending
+  // a single output line re-rendered this component — and with it the entire
+  // editor tree — once per console.log. Actions are created once and never
+  // change identity, so selecting them costs nothing.
+  const isChatOpen = useEditorStore((s) => s.isChatOpen);
+  const isOutputOpen = useEditorStore((s) => s.isOutputOpen);
+  const unreadCount = useEditorStore((s) => s.unreadCount);
+  const isRunning = useEditorStore((s) => s.isRunning);
+
+  const toggleChat = useEditorStore((s) => s.toggleChat);
+  const openOutput = useEditorStore((s) => s.openOutput);
+  const addOutputLine = useEditorStore((s) => s.addOutputLine);
+  const addMessage = useEditorStore((s) => s.addMessage);
+  const clearOutput = useEditorStore((s) => s.clearOutput);
+  const setIsRunning = useEditorStore((s) => s.setIsRunning);
+  const reset = useEditorStore((s) => s.reset);
 
   // Output and chat belong to one room, but the store is a module singleton
   // that survives client-side navigation. Clearing on the way out means the
