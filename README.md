@@ -12,7 +12,7 @@ see each other's presence, run code in the browser, and chat — all in real tim
 - **Real-time collaboration** — Type and see changes instantly across all connected users
 - **Monaco Editor** — The same engine that powers VS Code, running in the browser
 - **Live user presence** — See who's in the room with colored avatars
-- **Sandboxed code execution** — Run JS/TS safely using Blob URL iframe isolation
+- **Isolated code execution** — Run JS/TS in a Web Worker, off the main thread
 - **Live chat** — Message teammates without leaving the editor
 - **Shareable rooms** — Just copy the URL and send it — no signup needed
 
@@ -37,20 +37,32 @@ see each other's presence, run code in the browser, and chat — all in real tim
 **Why Liveblocks over raw WebSockets?**
 Building WebSocket infrastructure from scratch means handling reconnections,
 presence, and broadcast messaging by hand. Liveblocks provides all of that out
-of the box. One caveat worth being upfront about: the `code` field here is a
-single Storage value overwritten on every edit (last-write-wins), not a
-character-level CRDT merge — two people editing the exact same spot at the
-same instant can clobber each other. Liveblocks does offer CRDT-backed Yjs
-storage for true concurrent text merging; that's a heavier dependency this
-project deliberately doesn't pull in yet, in favor of staying simple and
-fully explainable.
+of the box.
 
-**Why Blob URL iframe for code execution?**
-`eval()` runs code with full access to our app — a serious security risk.
-We create a Blob URL and load it in an `<iframe>` — this gives the iframe
-a completely separate `blob:` origin, so it cannot access our app's DOM,
-localStorage, or variables. Output is passed back safely via `postMessage`.
-We also call `URL.revokeObjectURL()` after execution to free memory.
+The significant caveat, stated plainly because it's the current limitation of
+this project: `code` is a single Storage value overwritten wholesale on every
+edit — last-write-wins, not a character-level merge. This is worse in practice
+than "conflicting edits are risky." Because each write replaces the entire
+document, an edit anywhere loses concurrent edits everywhere. Two tabs, one
+typing on line 1 and one on line 5, reliably ends with one person's work gone
+from their own screen. Migrating this to a Yjs CRDT is the next planned change.
+
+**Why a Web Worker for code execution?**
+`eval()` runs code with full access to the app, so execution needs to happen
+somewhere isolated. This originally used an `<iframe>` loaded from a Blob URL,
+on the assumption that a `blob:` origin was a separate origin. That assumption
+is wrong: a blob URL **inherits the origin of the document that created it**,
+so the iframe was same-origin with the app and user code could reach
+`window.parent.document` and `localStorage`. The same mistake broke the
+execution timeout — a same-origin iframe shares the main thread, so a blocking
+loop froze the page and the timer meant to kill it could never fire.
+
+A Worker fixes both properties. It has no DOM, no `window.parent` and no
+`localStorage`, so there is nothing to reach, and it runs on its own thread,
+so `terminate()` actually stops a runaway loop after the 5s ceiling. Output
+comes back over `postMessage`, handled per-worker rather than through a
+window-level listener that accepted messages from any frame. A worker can
+still reach the network; closing that is a job for a CSP.
 
 **Why Zustand for some state, Liveblocks for other?**
 Liveblocks handles _shared_ state (code content, language) that all users need.
@@ -104,7 +116,9 @@ src/
     UserPresence.tsx               # Online user avatars
     ErrorBoundary.tsx              # Graceful error handling
   lib/
-    executeCode.ts                 # Blob URL iframe sandboxed code runner
+    executeCode.ts                 # Web Worker code runner with a hard timeout
+    transpileTypeScript.ts         # TS -> JS via Monaco's bundled compiler
+    useDebouncedCallback.ts        # Debounce used for the shared-document write
     constants.ts                   # Languages, starter code, user colors
   store/
     useEditorStore.ts              # Zustand — local UI state only
