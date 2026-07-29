@@ -25,6 +25,11 @@ export default function CollaborativeEditor() {
 
   const updateCode = useMutation(({ storage }, newCode: string) => {
     storage.set("code", newCode);
+    // first real keystroke retires the starter, so switching language after
+    // this point won't overwrite what someone has written
+    if (storage.get("pristine")) {
+      storage.set("pristine", false);
+    }
   }, []);
 
   // Typing stays instant locally; the write to shared storage is debounced

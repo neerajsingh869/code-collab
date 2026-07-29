@@ -50,6 +50,7 @@ export default function EditorPage() {
         initialStorage={{
           code: STARTER_CODE["typescript"],
           language: "typescript",
+          pristine: true,
         }}
       >
         <EditorLayout

@@ -59,11 +59,10 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
   // language shouldn't silently throw away work, but leaving a TypeScript
   // snippet sitting in a room someone just switched to Python is worse than
   // useless — it can't even run.
+  // Rooms created before `pristine` existed report undefined, which we treat
+  // as "already written in" — never wipe a document we can't vouch for.
   const updateLanguage = useMutation(({ storage }, lang: Language) => {
-    const current = storage.get("code");
-    const previous = storage.get("language") as Language;
-
-    if (current === STARTER_CODE[previous]) {
+    if (storage.get("pristine") === true) {
       storage.set("code", STARTER_CODE[lang]);
     }
     storage.set("language", lang);
