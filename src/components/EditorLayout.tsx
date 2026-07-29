@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Copy, Check, Play, MessageSquare } from "lucide-react";
 import { useStorage, useMutation, useEventListener } from "@liveblocks/react";
 import { useEditorStore } from "@/store/useEditorStore";
-import { LANGUAGES } from "@/lib/constants";
+import { LANGUAGES, STARTER_CODE } from "@/lib/constants";
 import { executeCode } from "@/lib/executeCode";
 import { transpileTypeScript } from "@/lib/transpileTypeScript";
 import type { Language } from "@/types";
@@ -55,7 +55,17 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
   const language = useStorage((root) => root.language);
   const code = useStorage((root) => root.code);
 
+  // Swapping the starter only when nothing has been written yet: changing
+  // language shouldn't silently throw away work, but leaving a TypeScript
+  // snippet sitting in a room someone just switched to Python is worse than
+  // useless — it can't even run.
   const updateLanguage = useMutation(({ storage }, lang: Language) => {
+    const current = storage.get("code");
+    const previous = storage.get("language") as Language;
+
+    if (current === STARTER_CODE[previous]) {
+      storage.set("code", STARTER_CODE[lang]);
+    }
     storage.set("language", lang);
   }, []);
 
