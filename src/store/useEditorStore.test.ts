@@ -47,4 +47,56 @@ describe("useEditorStore", () => {
     });
     expect(useEditorStore.getState().messages).toHaveLength(1);
   });
+
+  it("counts messages as unread only while the chat panel is closed", () => {
+    useEditorStore.getState().addMessage({
+      id: "1",
+      user: "Someone",
+      color: "#58a6ff",
+      text: "while closed",
+      timestamp: Date.now(),
+    });
+    expect(useEditorStore.getState().unreadCount).toBe(1);
+
+    useEditorStore.getState().toggleChat();
+    expect(useEditorStore.getState().unreadCount).toBe(0);
+
+    useEditorStore.getState().addMessage({
+      id: "2",
+      user: "Someone",
+      color: "#58a6ff",
+      text: "while open",
+      timestamp: Date.now(),
+    });
+    expect(useEditorStore.getState().unreadCount).toBe(0);
+  });
+
+  // Guards the leak between rooms: the store is a module singleton, so without
+  // this every room inherited the previous room's output and chat history.
+  it("reset clears room-scoped state but keeps the actions callable", () => {
+    const store = useEditorStore.getState();
+    store.addOutputLine({ type: "log", text: "from the old room" });
+    store.addMessage({
+      id: "1",
+      user: "Someone",
+      color: "#58a6ff",
+      text: "old chat",
+      timestamp: Date.now(),
+    });
+    store.toggleOutput();
+    store.setIsRunning(true);
+
+    useEditorStore.getState().reset();
+
+    const after = useEditorStore.getState();
+    expect(after.outputLines).toEqual([]);
+    expect(after.messages).toEqual([]);
+    expect(after.unreadCount).toBe(0);
+    expect(after.isOutputOpen).toBe(false);
+    expect(after.isChatOpen).toBe(false);
+    expect(after.isRunning).toBe(false);
+
+    after.addOutputLine({ type: "log", text: "new room" });
+    expect(useEditorStore.getState().outputLines).toHaveLength(1);
+  });
 });

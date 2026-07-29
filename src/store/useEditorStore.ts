@@ -4,31 +4,45 @@ import type { OutputLine, ChatMessage } from "@/types";
 // local-only UI state (panels, output, chat) — kept separate from Liveblocks
 // storage so it never syncs across users
 
-type EditorStore = {
+type EditorState = {
   // Panel visibility
   isChatOpen: boolean;
   isOutputOpen: boolean;
   unreadCount: number;
-  toggleChat: () => void;
-  toggleOutput: () => void;
-  openOutput: () => void;
 
   // Code execution output
   outputLines: OutputLine[];
-  addOutputLine: (line: OutputLine) => void;
-  clearOutput: () => void;
   isRunning: boolean;
-  setIsRunning: (val: boolean) => void;
 
   // Chat messages (received from Liveblocks broadcast events)
   messages: ChatMessage[];
-  addMessage: (msg: ChatMessage) => void;
 };
 
-export const useEditorStore = create<EditorStore>((set) => ({
+type EditorStore = EditorState & {
+  toggleChat: () => void;
+  toggleOutput: () => void;
+  openOutput: () => void;
+  addOutputLine: (line: OutputLine) => void;
+  clearOutput: () => void;
+  setIsRunning: (val: boolean) => void;
+  addMessage: (msg: ChatMessage) => void;
+  reset: () => void;
+};
+
+// The store is a module singleton, so it outlives any one room. Everything in
+// here is scoped to a single room, which is what `reset` exists for.
+const initialState: EditorState = {
   isChatOpen: false,
   isOutputOpen: false,
   unreadCount: 0,
+  outputLines: [],
+  isRunning: false,
+  messages: [],
+};
+
+export const useEditorStore = create<EditorStore>((set) => ({
+  ...initialState,
+
   toggleChat: () =>
     set((s) => ({
       isChatOpen: !s.isChatOpen,
@@ -37,17 +51,16 @@ export const useEditorStore = create<EditorStore>((set) => ({
   toggleOutput: () => set((s) => ({ isOutputOpen: !s.isOutputOpen })),
   openOutput: () => set({ isOutputOpen: true }),
 
-  outputLines: [],
   addOutputLine: (line) =>
     set((s) => ({ outputLines: [...s.outputLines, line] })),
   clearOutput: () => set({ outputLines: [] }),
-  isRunning: false,
   setIsRunning: (val) => set({ isRunning: val }),
 
-  messages: [],
   addMessage: (msg) =>
     set((s) => ({
       messages: [...s.messages, msg],
       unreadCount: s.isChatOpen ? s.unreadCount : s.unreadCount + 1,
     })),
+
+  reset: () => set(initialState),
 }));

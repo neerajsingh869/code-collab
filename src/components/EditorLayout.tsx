@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Copy, Check, Play, MessageSquare } from "lucide-react";
 import { useStorage, useMutation, useEventListener } from "@liveblocks/react";
 import { useEditorStore } from "@/store/useEditorStore";
@@ -35,7 +35,15 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
     clearOutput,
     isRunning,
     setIsRunning,
+    reset,
   } = useEditorStore();
+
+  // Output and chat belong to one room, but the store is a module singleton
+  // that survives client-side navigation. Clearing on the way out means the
+  // next room starts empty without the current one flashing blank on entry.
+  useEffect(() => {
+    return () => reset();
+  }, [roomId, reset]);
 
   // Lives here, not in ChatPanel: the panel unmounts when it's closed, so a
   // listener inside it missed every message sent while the panel was shut.
