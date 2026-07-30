@@ -87,8 +87,11 @@ export default function ChatPanel({ userName }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="p-3 border-t border-[#30363d] flex-shrink-0">
+      {/* Extra room at the bottom for the Liveblocks badge, which is fixed
+          12px from the bottom-right and 38px tall. Without it the badge sits
+          on top of the Send button at z-index 9999 and swallows every click,
+          leaving Enter as the only way to send. */}
+      <div className="p-3 pb-16 border-t border-[#30363d] flex-shrink-0">
         <div className="flex gap-2">
           <input
             value={input}
