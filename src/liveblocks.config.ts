@@ -2,7 +2,8 @@ declare global {
   interface Liveblocks {
     Presence: {
       name: string
-      color: string
+      // no colour here on purpose — it's derived from the connection id, so
+      // there's nothing to keep in sync (see colorForConnection)
     }
 
     Storage: {

@@ -54,8 +54,7 @@ print(greet("World"))
 `,
 };
 
-// Each user in the room gets one of these colors for their avatar + cursor label
-export const USER_COLORS = [
+const USER_COLORS = [
   "#58a6ff",
   "#f78166",
   "#3fb950",
@@ -63,3 +62,11 @@ export const USER_COLORS = [
   "#ffa657",
   "#79c0ff",
 ];
+
+// A user's colour is derived from their Liveblocks connection id rather than
+// stored in presence: every client then works it out identically, so it never
+// has to be synced and can't drift from who it belongs to. Liveblocks hands
+// out connection ids in sequence, so everyone in a room of up to six gets a
+// distinct colour; beyond that, or after enough churn, two can repeat.
+export const colorForConnection = (connectionId: number) =>
+  USER_COLORS[connectionId % USER_COLORS.length];

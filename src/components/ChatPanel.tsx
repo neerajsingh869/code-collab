@@ -3,22 +3,26 @@
 import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { nanoid } from "nanoid";
-import { useBroadcastEvent } from "@liveblocks/react";
+import { useBroadcastEvent, useSelf } from "@liveblocks/react";
 import { useEditorStore } from "@/store/useEditorStore";
+import { colorForConnection } from "@/lib/constants";
 import type { ChatMessage } from "@/types";
 
 type Props = {
   userName: string;
-  userColor: string;
 };
 
-export default function ChatPanel({ userName, userColor }: Props) {
+export default function ChatPanel({ userName }: Props) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const messages = useEditorStore((s) => s.messages);
   const addMessage = useEditorStore((s) => s.addMessage);
   const toggleChat = useEditorStore((s) => s.toggleChat);
   const broadcast = useBroadcastEvent();
+
+  // carried on the message itself: broadcasts outlive the sender's presence,
+  // so a message stays the right colour even after they disconnect
+  const connectionId = useSelf((me) => me.connectionId);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -31,7 +35,7 @@ export default function ChatPanel({ userName, userColor }: Props) {
     const msg: ChatMessage = {
       id: nanoid(),
       user: userName,
-      color: userColor,
+      color: colorForConnection(connectionId ?? 0),
       text: trimmed,
       timestamp: Date.now(),
     };

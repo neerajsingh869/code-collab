@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useStorage, useMutation, useOthers } from "@liveblocks/react";
 import { useDebouncedCallback } from "@/lib/useDebouncedCallback";
+import { colorForConnection } from "@/lib/constants";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -70,7 +71,7 @@ export default function CollaborativeEditor() {
             <span
               key={user.connectionId}
               className="text-xs text-white px-2 py-0.5 rounded-full"
-              style={{ background: user.presence.color }}
+              style={{ background: colorForConnection(user.connectionId) }}
             >
               {user.presence.name} is here
             </span>

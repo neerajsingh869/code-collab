@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { RoomProvider } from "@liveblocks/react";
-import { USER_COLORS, STARTER_CODE } from "@/lib/constants";
+import { STARTER_CODE } from "@/lib/constants";
 import EditorLayout from "@/components/EditorLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -13,7 +13,6 @@ export default function EditorPage() {
   const roomId = params.roomId as string;
 
   const [userName, setUserName] = useState("");
-  const [userColor, setUserColor] = useState("");
 
   useEffect(() => {
     const savedName = localStorage.getItem("codecollab_username");
@@ -28,7 +27,6 @@ export default function EditorPage() {
     // after mount — that's a legitimate use of an effect, not a workaround.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setUserName(savedName);
-    setUserColor(USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)]);
   }, [router]);
 
   if (!userName) {
@@ -46,18 +44,14 @@ export default function EditorPage() {
     <ErrorBoundary>
       <RoomProvider
         id={roomId}
-        initialPresence={{ name: userName, color: userColor }}
+        initialPresence={{ name: userName }}
         initialStorage={{
           code: STARTER_CODE["typescript"],
           language: "typescript",
           pristine: true,
         }}
       >
-        <EditorLayout
-          roomId={roomId}
-          userName={userName}
-          userColor={userColor}
-        />
+        <EditorLayout roomId={roomId} userName={userName} />
       </RoomProvider>
     </ErrorBoundary>
   );

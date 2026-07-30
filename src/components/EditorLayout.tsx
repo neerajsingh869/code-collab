@@ -18,10 +18,9 @@ const RUNNABLE_LANGUAGES = ["javascript", "typescript"];
 type Props = {
   roomId: string;
   userName: string;
-  userColor: string;
 };
 
-export default function EditorLayout({ roomId, userName, userColor }: Props) {
+export default function EditorLayout({ roomId, userName }: Props) {
   const [copied, setCopied] = useState(false);
 
   // One selector per value rather than destructuring the whole store. Calling
@@ -222,7 +221,7 @@ export default function EditorLayout({ roomId, userName, userColor }: Props) {
 
         {isChatOpen && (
           <div className="w-72 border-l border-[#30363d] flex-shrink-0">
-            <ChatPanel userName={userName} userColor={userColor} />
+            <ChatPanel userName={userName} />
           </div>
         )}
       </div>

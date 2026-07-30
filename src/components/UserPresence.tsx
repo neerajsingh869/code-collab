@@ -1,6 +1,7 @@
 "use client";
 
 import { useOthers, useSelf } from "@liveblocks/react";
+import { colorForConnection } from "@/lib/constants";
 
 export default function UserPresence() {
   // useSelf = the current user (you)
@@ -11,12 +12,18 @@ export default function UserPresence() {
   // Merge into one list — current user first, then others
   const allUsers = [
     ...(self
-      ? [{ id: "me", name: self.presence.name, color: self.presence.color }]
+      ? [
+          {
+            id: "me",
+            name: self.presence.name,
+            color: colorForConnection(self.connectionId),
+          },
+        ]
       : []),
     ...others.map((u) => ({
       id: String(u.connectionId),
       name: u.presence.name,
-      color: u.presence.color,
+      color: colorForConnection(u.connectionId),
     })),
   ];
 
