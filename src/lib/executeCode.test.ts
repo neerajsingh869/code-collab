@@ -2,10 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { executeCode } from "./executeCode";
 import type { OutputLine } from "@/types";
 
-// jsdom has no Worker, so we stand one in and drive it by hand. That's enough
-// to pin the two behaviours that were actually broken before: the runner must
-// terminate a worker it times out on, and it must surface a script that fails
-// to parse.
+// jsdom has no Worker, so drive a stand-in by hand.
 class MockWorker {
   static instances: MockWorker[] = [];
   onmessage: ((event: MessageEvent) => void) | null = null;
@@ -21,7 +18,7 @@ class MockWorker {
   }
 
   send(data: unknown) {
-    // a terminated worker cannot deliver anything, so the stand-in shouldn't
+    // real workers go silent once terminated
     if (this.terminated) return;
     this.onmessage?.({ data } as MessageEvent);
   }
@@ -75,8 +72,8 @@ describe("executeCode", () => {
     expect(revoked).toEqual(["blob:mock-url"]);
   });
 
-  // The bug this guards: the old iframe runner shared the main thread, so a
-  // blocking loop meant this timer could never fire and nothing was ever killed.
+  // guards the old iframe bug: it shared the main thread, so a blocking loop
+  // meant this timer never fired
   it("terminates the worker and reports a timeout when code never finishes", async () => {
     vi.useFakeTimers();
     const lines: OutputLine[] = [];

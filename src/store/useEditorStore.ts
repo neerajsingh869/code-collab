@@ -29,8 +29,7 @@ type EditorStore = EditorState & {
   reset: () => void;
 };
 
-// The store is a module singleton, so it outlives any one room. Everything in
-// here is scoped to a single room, which is what `reset` exists for.
+// all per-room, but the store is a module singleton — hence reset
 const initialState: EditorState = {
   isChatOpen: false,
   isOutputOpen: false,

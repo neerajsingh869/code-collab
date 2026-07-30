@@ -63,10 +63,8 @@ const USER_COLORS = [
   "#79c0ff",
 ];
 
-// A user's colour is derived from their Liveblocks connection id rather than
-// stored in presence: every client then works it out identically, so it never
-// has to be synced and can't drift from who it belongs to. Liveblocks hands
-// out connection ids in sequence, so everyone in a room of up to six gets a
-// distinct colour; beyond that, or after enough churn, two can repeat.
+// Derived from the connection id instead of kept in presence, so every client
+// works out the same colour without it being synced. Distinct for up to six
+// people; after enough joins and leaves two live ids can land on the same one.
 export const colorForConnection = (connectionId: number) =>
   USER_COLORS[connectionId % USER_COLORS.length];

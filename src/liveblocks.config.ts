@@ -2,16 +2,14 @@ declare global {
   interface Liveblocks {
     Presence: {
       name: string
-      // no colour here on purpose — it's derived from the connection id, so
-      // there's nothing to keep in sync (see colorForConnection)
+      // colour lives in colorForConnection, derived from the connection id
     }
 
     Storage: {
       code: string
       language: string
-      // whether anyone has actually typed in this room yet — tracked
-      // explicitly because comparing against STARTER_CODE breaks the moment
-      // the starter text is edited in a later release
+      // has anyone typed here yet. A flag rather than comparing against
+      // STARTER_CODE, which breaks as soon as the starter text changes
       pristine: boolean
     }
 

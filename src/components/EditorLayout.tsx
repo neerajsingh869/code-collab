@@ -23,11 +23,9 @@ type Props = {
 export default function EditorLayout({ roomId, userName }: Props) {
   const [copied, setCopied] = useState(false);
 
-  // One selector per value rather than destructuring the whole store. Calling
-  // useEditorStore() with no selector subscribes to every field, so appending
-  // a single output line re-rendered this component — and with it the entire
-  // editor tree — once per console.log. Actions are created once and never
-  // change identity, so selecting them costs nothing.
+  // Selector per value: useEditorStore() with no selector subscribes to every
+  // field, so one output line re-rendered this and the editor below it.
+  // Action identities never change, so selecting them is free.
   const isChatOpen = useEditorStore((s) => s.isChatOpen);
   const isOutputOpen = useEditorStore((s) => s.isOutputOpen);
   const unreadCount = useEditorStore((s) => s.unreadCount);
@@ -41,16 +39,14 @@ export default function EditorLayout({ roomId, userName }: Props) {
   const setIsRunning = useEditorStore((s) => s.setIsRunning);
   const reset = useEditorStore((s) => s.reset);
 
-  // Output and chat belong to one room, but the store is a module singleton
-  // that survives client-side navigation. Clearing on the way out means the
-  // next room starts empty without the current one flashing blank on entry.
+  // the store is a module singleton and outlives the room. Clearing on the
+  // way out rather than on entry avoids a blank flash on mount.
   useEffect(() => {
     return () => reset();
   }, [roomId, reset]);
 
-  // Lives here, not in ChatPanel: the panel unmounts when it's closed, so a
-  // listener inside it missed every message sent while the panel was shut.
-  // Liveblocks doesn't echo our own broadcasts back, so we add ours on send.
+  // here rather than in ChatPanel, which unmounts when closed and missed
+  // anything sent meanwhile. Liveblocks doesn't echo our own broadcasts back.
   useEventListener(({ event }) => {
     if (event.type === "CHAT_MESSAGE") {
       addMessage({
@@ -66,12 +62,8 @@ export default function EditorLayout({ roomId, userName }: Props) {
   const language = useStorage((root) => root.language);
   const code = useStorage((root) => root.code);
 
-  // Swapping the starter only when nothing has been written yet: changing
-  // language shouldn't silently throw away work, but leaving a TypeScript
-  // snippet sitting in a room someone just switched to Python is worse than
-  // useless — it can't even run.
-  // Rooms created before `pristine` existed report undefined, which we treat
-  // as "already written in" — never wipe a document we can't vouch for.
+  // Only swap the starter if nothing has been written. Rooms predating the
+  // pristine flag report undefined and are left alone.
   const updateLanguage = useMutation(({ storage }, lang: Language) => {
     if (storage.get("pristine") === true) {
       storage.set("code", STARTER_CODE[lang]);

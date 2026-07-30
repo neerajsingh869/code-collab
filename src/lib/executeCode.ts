@@ -3,19 +3,11 @@ import { buildWorkerSource } from "./executionRuntime";
 
 const TIMEOUT_MS = 5000;
 
-// Runs user code in a Worker rather than an iframe. Two reasons, both learned
-// the hard way from the iframe version this replaces:
-//
-// 1. Isolation. A blob: URL inherits the origin of the document that created
-//    it, so the old blob: iframe was same-origin with the app — user code could
-//    read window.parent.document and localStorage. A worker has no DOM, no
-//    window.parent and no localStorage at all, so there is nothing to reach.
-// 2. Termination. A same-origin iframe shares our event loop, so a blocking
-//    loop froze the main thread and the "timeout" timer could never fire.
-//    A worker is a separate thread, so terminate() actually stops it.
-//
-// Remaining hole, deliberately left for a CSP to close: a worker can still
-// fetch() arbitrary origins. It cannot touch app state, only the network.
+// Worker rather than iframe. A blob: URL inherits the origin of the document
+// that created it, so the old iframe was same-origin with the app and could
+// read its DOM and localStorage. It also shared the main thread, so a blocking
+// loop froze the page and the timeout never fired. A worker has neither.
+// Still open: a worker can reach the network. That needs a CSP.
 export const executeCode = (
   code: string,
   onOutput: (line: OutputLine) => void,
@@ -37,9 +29,8 @@ export const executeCode = (
       resolve();
     };
 
-    // Backstop for work that never drains: a blocking loop, an interval left
-    // running, a request that never comes back. Everything that does finish
-    // reports "done" and is cleaned up well before this.
+    // backstop for work that never drains: blocking loop, uncleared interval,
+    // a request that never returns
     const timer = setTimeout(() => {
       onOutput({
         type: "error",
@@ -48,8 +39,8 @@ export const executeCode = (
       cleanup();
     }, TIMEOUT_MS);
 
-    // messages arrive only from this worker — unlike the old window-level
-    // listener, which accepted postMessage from any frame on the page
+    // bound to this worker, unlike the old window listener which took
+    // messages from any frame on the page
     worker.onmessage = (event: MessageEvent) => {
       const { type, text } = event.data ?? {};
       if (type === "log" || type === "error") {

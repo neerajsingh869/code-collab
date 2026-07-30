@@ -4,11 +4,9 @@ import { buildWorkerSource } from "./executionRuntime";
 
 type Message = { type: string; text?: string };
 
-// A worker's global object is `self`, which is why reassigning self.setTimeout
-// inside the harness also rebinds the bare setTimeout that user code calls. A
-// vm context reproduces that exactly — the sandbox's global and its `self` are
-// the same object — which jsdom cannot do and a hand-written mock would only
-// pretend to.
+// In a vm context the global and `self` are the same object, so reassigning
+// self.setTimeout rebinds the bare setTimeout user code calls, as in a worker.
+// jsdom can't do that.
 function runInSandbox(code: string, waitMs = 500): Promise<string[]> {
   const messages: Message[] = [];
 
@@ -25,8 +23,7 @@ function runInSandbox(code: string, waitMs = 500): Promise<string[]> {
   context.self = context;
   vm.runInContext(buildWorkerSource(code), context);
 
-  // Reading back in arrival order is the whole point: it shows that "done"
-  // lands after everything the program still had to say.
+  // arrival order is the point: done should land last
   const transcript = () =>
     messages.map((message) =>
       message.type === "done" ? "done" : String(message.text),
@@ -53,8 +50,8 @@ describe("execution runtime", () => {
     ]);
   });
 
-  // The bug this guards: done used to fire the moment the synchronous body
-  // returned, so the worker was killed with this callback still pending.
+  // guards the old behaviour: done fired as soon as the sync body returned,
+  // killing the worker with this callback still pending
   it("waits for a pending timer before reporting done", async () => {
     expect(
       await runInSandbox("setTimeout(() => console.log('late'), 20)"),

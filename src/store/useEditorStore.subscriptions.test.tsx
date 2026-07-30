@@ -3,10 +3,7 @@ import { useEffect } from "react";
 import { render, act } from "@testing-library/react";
 import { useEditorStore } from "./useEditorStore";
 
-// These assert *how much* components re-render, not what they show. Without
-// atomic selectors, every component reading the store re-rendered on every
-// state change — so a console.log-heavy run re-rendered the whole editor tree
-// once per line.
+// These assert how often components render, not what they show.
 
 const initialState = useEditorStore.getState();
 
@@ -21,8 +18,8 @@ function renderProbe<T>(selector: (state: State) => T) {
 
   function Probe() {
     const value = useEditorStore(selector);
-    // counted in an effect, not during render: it keeps the React Compiler
-    // lint happy and measures committed renders, which is what we care about
+    // in an effect because mutating during render trips the compiler lint,
+    // and this counts committed renders anyway
     useEffect(() => {
       counter.renders += 1;
     });
@@ -75,8 +72,7 @@ describe("store subscriptions", () => {
     expect(counter.renders).toBeGreaterThan(before);
   });
 
-  // What makes selecting actions individually free: they are created once by
-  // the store initialiser, so their identity never changes.
+  // why selecting actions individually is free
   it("keeps action identities stable across state updates", () => {
     const before = useEditorStore.getState().toggleChat;
 

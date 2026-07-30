@@ -1,12 +1,7 @@
-// The harness installed inside the worker ahead of any user code. Its job is
-// to decide when the program is genuinely finished, which is not the same
-// thing as "the last statement ran" — a pending timer or an in-flight request
-// still has output to produce.
-//
-// Only macrotasks are counted. Microtasks deliberately are not: they always
-// drain before the next macrotask runs, so deferring the completion check by
-// one macrotask lets an entire promise chain settle — and schedule further
-// work — before we conclude there is nothing left to wait for.
+// Runs inside the worker ahead of user code. Counts outstanding macrotasks so
+// that finishing means "nothing left to run" rather than "last statement ran".
+// Microtasks aren't counted: they drain before the next macrotask, so putting
+// the check on a macrotask lets a whole promise chain settle first.
 const RUNTIME_SOURCE = `
 const __runtime = (() => {
   const nativeSetTimeout = self.setTimeout.bind(self)
@@ -44,8 +39,7 @@ const __runtime = (() => {
     self.postMessage({ type: 'done' })
   }
 
-  // Always one macrotask late, so callbacks queued by whatever just finished
-  // get their turn — and their chance to schedule more — before we decide.
+  // one macrotask late, so queued callbacks still get to schedule more work
   const checkDone = () => nativeSetTimeout(announceDone, 0)
 
   const acquire = () => {
@@ -80,8 +74,7 @@ const __runtime = (() => {
     nativeClearTimeout(id)
   }
 
-  // An interval has no natural end, so it stays outstanding until cleared:
-  // code that leaves one running has not finished, it is still running.
+  // no natural end, so it stays outstanding until cleared
   self.setInterval = (handler, delay, ...args) => {
     if (typeof handler !== 'function') return nativeSetInterval(handler, delay)
     acquire()
@@ -113,8 +106,7 @@ const __runtime = (() => {
     emit('error', arguments)
   }
 
-  // Throws from inside an async callback surface here rather than at the
-  // try/catch wrapped around the synchronous body.
+  // async throws land here, not in the try/catch around the sync body
   self.onerror = (message) => {
     send('error', String(message))
     checkDone()
@@ -141,8 +133,7 @@ ${code}
 } catch (error) {
   __runtime.reportError(error)
 } finally {
-  // still runs when the body threw: timers scheduled before the throw are
-  // real and their output is worth waiting for
+  // runs even if the body threw: timers scheduled before it are still live
   __runtime.markSyncFinished()
 }
 `;
