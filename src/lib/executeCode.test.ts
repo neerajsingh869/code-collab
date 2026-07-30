@@ -21,6 +21,8 @@ class MockWorker {
   }
 
   send(data: unknown) {
+    // a terminated worker cannot deliver anything, so the stand-in shouldn't
+    if (this.terminated) return;
     this.onmessage?.({ data } as MessageEvent);
   }
 

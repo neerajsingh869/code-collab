@@ -1,4 +1,5 @@
 import type { OutputLine } from "@/types";
+import { buildWorkerSource } from "./executionRuntime";
 
 const TIMEOUT_MS = 5000;
 
@@ -15,46 +16,6 @@ const TIMEOUT_MS = 5000;
 //
 // Remaining hole, deliberately left for a CSP to close: a worker can still
 // fetch() arbitrary origins. It cannot touch app state, only the network.
-const buildWorkerSource = (code: string) => `
-const serialize = (value) => {
-  if (value === null) return 'null'
-  if (value === undefined) return 'undefined'
-  if (typeof value === 'string') return value
-  if (typeof value === 'object') {
-    try { return JSON.stringify(value, null, 2) } catch (e) { return String(value) }
-  }
-  return String(value)
-}
-
-const emit = (type, args) => {
-  self.postMessage({ type, text: Array.from(args).map(serialize).join(' ') })
-}
-
-console.log = function () { emit('log', arguments) }
-console.info = console.log
-console.debug = console.log
-console.warn = console.log
-console.error = function () { emit('error', arguments) }
-
-// async throws land here rather than in the try/catch below
-self.onerror = (message) => {
-  self.postMessage({ type: 'error', text: String(message) })
-  self.postMessage({ type: 'done' })
-}
-self.onunhandledrejection = (event) => {
-  self.postMessage({ type: 'error', text: 'Unhandled rejection: ' + String(event.reason) })
-  self.postMessage({ type: 'done' })
-}
-
-try {
-${code}
-  self.postMessage({ type: 'done' })
-} catch (e) {
-  self.postMessage({ type: 'error', text: e && e.message ? e.message : String(e) })
-  self.postMessage({ type: 'done' })
-}
-`;
-
 export const executeCode = (
   code: string,
   onOutput: (line: OutputLine) => void,
@@ -76,6 +37,9 @@ export const executeCode = (
       resolve();
     };
 
+    // Backstop for work that never drains: a blocking loop, an interval left
+    // running, a request that never comes back. Everything that does finish
+    // reports "done" and is cleaned up well before this.
     const timer = setTimeout(() => {
       onOutput({
         type: "error",
