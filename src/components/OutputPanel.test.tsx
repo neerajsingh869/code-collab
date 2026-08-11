@@ -40,8 +40,33 @@ describe("OutputPanel", () => {
     });
     render(<OutputPanel />);
 
-    fireEvent.click(screen.getByTitle("Clear output"));
+    fireEvent.click(screen.getByRole("button", { name: "Clear output" }));
 
     expect(useEditorStore.getState().outputLines).toHaveLength(0);
+  });
+
+  it("announces output in a log region and marks errors without relying on colour", () => {
+    useEditorStore.setState({
+      outputLines: [
+        { type: "log", text: "hello world" },
+        { type: "error", text: "boom" },
+      ],
+    });
+    render(<OutputPanel />);
+
+    const log = screen.getByRole("log", { name: "Program output" });
+    expect(log).toHaveAttribute("aria-live", "polite");
+    expect(log).toHaveTextContent("Error: boom");
+  });
+
+  it("gives both icon buttons an accessible name", () => {
+    render(<OutputPanel />);
+
+    expect(
+      screen.getByRole("button", { name: "Clear output" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Close output panel" }),
+    ).toBeInTheDocument();
   });
 });

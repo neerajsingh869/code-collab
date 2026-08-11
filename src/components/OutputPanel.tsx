@@ -17,34 +17,39 @@ export default function OutputPanel() {
           <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
             Output
           </span>
-          {isRunning && (
-            <span className="text-green-400 text-xs animate-pulse">
-              running...
-            </span>
-          )}
+          <span role="status" className="text-green-400 text-xs motion-safe:animate-pulse">
+            {isRunning ? "running..." : ""}
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={clearOutput}
-            title="Clear output"
-            className="text-gray-600 hover:text-gray-400 transition-colors"
+            aria-label="Clear output"
+            className="text-gray-400 hover:text-white transition-colors
+                       focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
           >
-            <Trash2 size={12} />
+            <Trash2 size={12} aria-hidden="true" />
           </button>
           <button
             onClick={toggleOutput}
-            title="Close panel"
-            className="text-gray-600 hover:text-gray-400 transition-colors"
+            aria-label="Close output panel"
+            className="text-gray-400 hover:text-white transition-colors
+                       focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
           >
-            <X size={12} />
+            <X size={12} aria-hidden="true" />
           </button>
         </div>
       </div>
 
-      {/* Output lines */}
-      <div className="flex-1 overflow-y-auto p-4 font-mono text-sm">
+      {/* role="log" so appended lines are announced without stealing focus */}
+      <div
+        role="log"
+        aria-live="polite"
+        aria-label="Program output"
+        className="flex-1 overflow-y-auto p-4 font-mono text-sm"
+      >
         {outputLines.length === 0 ? (
-          <span className="text-gray-700">
+          <span className="text-gray-400">
             {isRunning ? "// running..." : "// press Run to execute your code"}
           </span>
         ) : (
@@ -55,9 +60,11 @@ export default function OutputPanel() {
                 line.type === "error" ? "text-red-400" : "text-green-300"
               }`}
             >
-              <span className="text-gray-600 select-none mr-2">
+              {/* colour alone can't carry the distinction */}
+              <span aria-hidden="true" className="text-gray-400 select-none mr-2">
                 {line.type === "error" ? "✖" : "›"}
               </span>
+              {line.type === "error" && <span className="sr-only">Error: </span>}
               {line.text}
             </div>
           ))

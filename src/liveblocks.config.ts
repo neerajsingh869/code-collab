@@ -8,8 +8,8 @@ declare global {
     Storage: {
       code: string
       language: string
-      // has anyone typed here yet. A flag rather than comparing against
-      // STARTER_CODE, which breaks as soon as the starter text changes
+      // has anyone typed here yet. A flag, because comparing against
+      // STARTER_CODE breaks as soon as the starter text changes
       pristine: boolean
     }
 

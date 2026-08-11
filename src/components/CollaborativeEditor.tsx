@@ -5,12 +5,13 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { useStorage, useMutation, useOthers } from "@liveblocks/react";
 import { useDebouncedCallback } from "@/lib/useDebouncedCallback";
 import { colorForConnection } from "@/lib/constants";
+import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
     <div className="h-full flex items-center justify-center bg-[#0d1117]">
-      <span className="text-gray-600 text-sm animate-pulse">
+      <span className="text-gray-400 text-sm motion-safe:animate-pulse">
         Loading editor...
       </span>
     </div>
@@ -23,6 +24,7 @@ export default function CollaborativeEditor() {
   const code = useStorage((root) => root.code);
   const language = useStorage((root) => root.language);
   const others = useOthers();
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   const updateCode = useMutation(({ storage }, newCode: string) => {
     storage.set("code", newCode);
@@ -57,19 +59,28 @@ export default function CollaborativeEditor() {
   if (code === null || language === null) {
     return (
       <div className="h-full flex items-center justify-center bg-[#0d1117]">
-        <span className="text-gray-600 text-sm">Joining room...</span>
+        <span className="text-gray-400 text-sm">Joining room...</span>
       </div>
     );
   }
 
   return (
     <div className="h-full relative">
+      {/* Monaco keeps Tab for indentation, so say how to get back out */}
+      <p className="sr-only">
+        Code editor, shared with everyone in this room. Press Escape and then
+        Tab to move focus out of the editor.
+      </p>
+
       {others.length > 0 && (
-        <div className="absolute top-2 right-2 z-10 flex flex-wrap gap-1">
+        <div
+          role="status"
+          className="absolute top-2 right-2 z-10 flex flex-wrap gap-1"
+        >
           {others.map((user) => (
             <span
               key={user.connectionId}
-              className="text-xs text-white px-2 py-0.5 rounded-full"
+              className="text-xs text-[#0d1117] px-2 py-0.5 rounded-full"
               style={{ background: colorForConnection(user.connectionId) }}
             >
               {user.presence.name} is here
@@ -96,8 +107,8 @@ export default function CollaborativeEditor() {
           scrollBeyondLastLine: false,
           lineNumbers: "on",
           renderLineHighlight: "all",
-          cursorBlinking: "smooth",
-          smoothScrolling: true,
+          cursorBlinking: prefersReducedMotion ? "solid" : "smooth",
+          smoothScrolling: !prefersReducedMotion,
           tabSize: 2,
           wordWrap: "on",
           bracketPairColorization: { enabled: true },

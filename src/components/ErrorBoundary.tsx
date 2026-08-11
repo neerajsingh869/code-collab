@@ -19,7 +19,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-6">
           <div className="bg-[#161b22] border border-red-900 rounded-xl p-8 max-w-md w-full text-center">
             <p className="text-red-400 text-lg mb-2">Something went wrong</p>
-            <p className="text-gray-600 text-sm mb-6 break-words">
+            <p className="text-gray-400 text-sm mb-6 break-words">
               {this.state.message}
             </p>
             <button

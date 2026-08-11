@@ -1,5 +1,6 @@
-// Runs inside the worker ahead of user code. Counts outstanding macrotasks so
-// that finishing means "nothing left to run" rather than "last statement ran".
+// Runs inside the worker ahead of user code. Counts outstanding macrotasks, so
+// a run ends when nothing is left to run, even if the last statement returned
+// long ago.
 // Microtasks aren't counted: they drain before the next macrotask, so putting
 // the check on a macrotask lets a whole promise chain settle first.
 const RUNTIME_SOURCE = `

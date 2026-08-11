@@ -3,7 +3,7 @@ import { buildWorkerSource } from "./executionRuntime";
 
 const TIMEOUT_MS = 5000;
 
-// Worker rather than iframe. A blob: URL inherits the origin of the document
+// Why a Worker: a blob: URL inherits the origin of the document
 // that created it, so the old iframe was same-origin with the app and could
 // read its DOM and localStorage. It also shared the main thread, so a blocking
 // loop froze the page and the timeout never fired. A worker has neither.

@@ -1,8 +1,8 @@
 import { loader } from "@monaco-editor/react";
 
 // Monaco already ships the TypeScript compiler to power its language service,
-// so we borrow that worker rather than adding a second copy of typescript to
-// the bundle just to strip annotations. This is transpile-only: type errors
+// so we borrow that worker and keep a second copy of typescript out of the
+// bundle just to strip annotations. This is transpile-only: type errors
 // still surface as squiggles in the editor, never at runtime.
 export async function transpileTypeScript(code: string): Promise<string> {
   const monaco = await loader.init();

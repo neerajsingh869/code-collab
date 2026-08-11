@@ -23,4 +23,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+
+      # includes the axe suite in src/test — jsdom can't judge colour, so the
+      # contrast rules are enforced statically alongside it
       - run: npm test

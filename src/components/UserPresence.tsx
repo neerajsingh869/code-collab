@@ -31,28 +31,30 @@ export default function UserPresence() {
 
   return (
     <div className="flex items-center gap-1.5">
-      {/* Show max 4 avatars, overlap them with negative margin */}
-      <div className="flex">
+      {/* Show max 4 avatars, overlap them with negative margin. The initial is
+          decoration; the name is what gets announced. */}
+      <ul aria-label="People in this room" className="flex">
         {allUsers.slice(0, 4).map((user, i) => (
-          <div
+          <li
             key={user.id}
             title={user.name}
             className="w-6 h-6 rounded-full flex items-center justify-center
-                       text-white text-xs font-semibold
+                       text-[#0d1117] text-xs font-semibold
                        border-2 border-[#0d1117]
                        -ml-1.5 first:ml-0"
             style={{ background: user.color, zIndex: allUsers.length - i }}
           >
-            {user.name.charAt(0).toUpperCase()}
-          </div>
+            <span aria-hidden="true">{user.name.charAt(0).toUpperCase()}</span>
+            <span className="sr-only">{user.name}</span>
+          </li>
         ))}
-      </div>
+      </ul>
 
       {allUsers.length > 4 && (
-        <span className="text-gray-600 text-xs">+{allUsers.length - 4}</span>
+        <span className="text-gray-400 text-xs">+{allUsers.length - 4}</span>
       )}
 
-      <span className="text-gray-600 text-xs">{allUsers.length} online</span>
+      <span className="text-gray-400 text-xs">{allUsers.length} online</span>
     </div>
   );
 }

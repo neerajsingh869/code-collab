@@ -54,7 +54,7 @@ print(greet("World"))
 `,
 };
 
-const USER_COLORS = [
+export const USER_COLORS = [
   "#58a6ff",
   "#f78166",
   "#3fb950",
