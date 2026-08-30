@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
+import { markCreatedHere } from "@/lib/roomCreator";
 
 export default function HomePage() {
   const router = useRouter();
@@ -20,6 +21,8 @@ export default function HomePage() {
 
     // becomes the room's shareable URL — anyone with it joins the same room
     const roomId = nanoid(10);
+    // marks this tab as the one that seeds the starter snippet
+    markCreatedHere(roomId);
     setIsLoading(true);
     router.push(`/editor/${roomId}`);
   };

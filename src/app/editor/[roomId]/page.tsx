@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { RoomProvider } from "@liveblocks/react";
-import { STARTER_CODE } from "@/lib/constants";
 import EditorLayout from "@/components/EditorLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -47,9 +46,8 @@ export default function EditorPage() {
     <ErrorBoundary>
       <RoomProvider
         id={roomId}
-        initialPresence={{ name: userName }}
+        initialPresence={{ name: userName, cursor: null }}
         initialStorage={{
-          code: STARTER_CODE["typescript"],
           language: "typescript",
           pristine: true,
         }}

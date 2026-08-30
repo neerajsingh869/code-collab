@@ -12,8 +12,10 @@
     "test:a11y": "vitest run src/test"
   },
   "dependencies": {
-    "@liveblocks/client": "^3.18.1",
-    "@liveblocks/react": "^3.18.1",
+    "@liveblocks/client": "^3.24.1",
+    "@liveblocks/node": "^3.24.1",
+    "@liveblocks/react": "^3.24.1",
+    "@liveblocks/yjs": "^3.24.1",
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/postcss": "^4.2.2",
     "lucide-react": "^1.8.0",
@@ -23,6 +25,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwindcss": "^4.2.2",
+    "yjs": "^13.6.32",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

@@ -1,11 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useLayoutEffect, useRef, useState } from "react";
-import { useStorage, useMutation, useOthers } from "@liveblocks/react";
-import { useDebouncedCallback } from "@/lib/useDebouncedCallback";
-import { colorForConnection } from "@/lib/constants";
+import { useEffect, useState } from "react";
+import { useStorage, useMutation, useOthers, useRoom } from "@liveblocks/react";
+import type { editor } from "monaco-editor";
+import { bindMonacoToYText } from "@/lib/monacoYjsBinding";
+import { useBroadcastCursor, useRemoteCursors } from "@/lib/useCursorPresence";
+import { useYText, useYjsProvider } from "@/lib/useYjsRoom";
+import { wasCreatedHere } from "@/lib/roomCreator";
+import { colorForConnection, STARTER_CODE } from "@/lib/constants";
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
+import type { Language } from "@/types";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -18,45 +23,53 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 
-const SYNC_DELAY_MS = 200;
-
 export default function CollaborativeEditor() {
-  const code = useStorage((root) => root.code);
   const language = useStorage((root) => root.language);
   const others = useOthers();
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  const updateCode = useMutation(({ storage }, newCode: string) => {
-    storage.set("code", newCode);
-    // first keystroke retires the starter so a language switch won't wipe it
-    if (storage.get("pristine")) {
-      storage.set("pristine", false);
-    }
+  const roomId = useRoom().id;
+  const provider = useYjsProvider();
+  const yText = useYText();
+
+  const [monacoEditor, setMonacoEditor] =
+    useState<editor.IStandaloneCodeEditor | null>(null);
+
+  const retirePristine = useMutation(({ storage }) => {
+    if (storage.get("pristine")) storage.set("pristine", false);
   }, []);
 
-  // Typing stays instant locally; the write to shared storage is debounced
-  // so we're not hitting the network on every keystroke. `lastSynced` tracks
-  // what we last sent, so a remote update isn't mistaken for an echo of our
-  // own write — only adopt it into local state if it's genuinely someone else's.
-  const [localCode, setLocalCode] = useState(code ?? "");
-  const lastSynced = useRef(localCode);
+  useEffect(() => {
+    const model = monacoEditor?.getModel();
+    if (!model) return;
 
-  useLayoutEffect(() => {
-    if (code !== null && code !== lastSynced.current) {
-      // Adopting a remote Liveblocks update into local state — a legitimate
-      // external-system sync, not state derived from props/render.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLocalCode(code);
-      lastSynced.current = code;
+    // Rebinds if a language switch ever swaps the model out from under us
+    return bindMonacoToYText(yText, model, { onLocalEdit: retirePristine });
+  }, [monacoEditor, yText, retirePristine, language]);
+
+  useBroadcastCursor(monacoEditor, yText);
+  useRemoteCursors(monacoEditor, yText);
+
+  useEffect(() => {
+    if (!language || !wasCreatedHere(roomId)) return;
+
+    const seed = () => {
+      if (!provider.synced) return;
+      if (yText.length === 0) {
+        yText.insert(0, STARTER_CODE[language as Language]);
+      }
+    };
+
+    if (provider.synced) {
+      seed();
+      return;
     }
-  }, [code]);
 
-  const syncCode = useDebouncedCallback((newCode: string) => {
-    lastSynced.current = newCode;
-    updateCode(newCode);
-  }, SYNC_DELAY_MS);
+    provider.on("synced", seed);
+    return () => provider.off("synced", seed);
+  }, [provider, yText, language, roomId]);
 
-  if (code === null || language === null) {
+  if (language === null) {
     return (
       <div className="h-full flex items-center justify-center bg-[#0d1117]">
         <span className="text-gray-400 text-sm">Joining room...</span>
@@ -72,6 +85,8 @@ export default function CollaborativeEditor() {
         Tab to move focus out of the editor.
       </p>
 
+      {/* Carets are drawn in the editor, which a screen reader can't see, so
+          the badges stay as the perceivable version of the same information */}
       {others.length > 0 && (
         <div
           role="status"
@@ -89,15 +104,11 @@ export default function CollaborativeEditor() {
         </div>
       )}
 
+      {/* No `value` prop: the binding owns the model's contents now */}
       <MonacoEditor
         height="100%"
         language={String(language)}
-        value={localCode}
-        onChange={(value) => {
-          if (value === undefined) return;
-          setLocalCode(value);
-          syncCode(value);
-        }}
+        onMount={(instance) => setMonacoEditor(instance)}
         theme="vs-dark"
         options={{
           fontSize: 14,

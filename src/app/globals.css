@@ -20,3 +20,54 @@ body {
   background: #30363d;
   border-radius: 3px;
 }
+
+/* Remote carets. One class per entry in USER_COLORS, because a Monaco
+   decoration is addressed by class name and colorForConnection already
+   reduces every connection to one of six. */
+.remote-color-0 {
+  --remote-color: #58a6ff;
+}
+.remote-color-1 {
+  --remote-color: #f78166;
+}
+.remote-color-2 {
+  --remote-color: #3fb950;
+}
+.remote-color-3 {
+  --remote-color: #d2a8ff;
+}
+.remote-color-4 {
+  --remote-color: #ffa657;
+}
+.remote-color-5 {
+  --remote-color: #79c0ff;
+}
+
+/* Drawn on a collapsed range, so the border is the whole caret */
+.remote-caret {
+  border-left: 2px solid var(--remote-color);
+  margin-left: -1px;
+  pointer-events: none;
+}
+
+.remote-selection {
+  background: color-mix(in srgb, var(--remote-color) 26%, transparent);
+  border-radius: 2px;
+}
+
+.remote-label {
+  background: var(--remote-color);
+  color: #0d1117;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 600;
+  padding: 0 4px;
+  border-radius: 3px 3px 3px 0;
+  white-space: nowrap;
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* never let a name tag swallow a click meant for the code beneath it */
+  pointer-events: none;
+  user-select: none;
+}

@@ -18,8 +18,19 @@ vi.mock("@/components/CollaborativeEditor", () => ({
   default: () => <div>editor</div>,
 }));
 
+// A real Y.Doc rather than a stub: EditorLayout reads the document to run it
+// and rewrites it on a language switch, so the shape has to behave.
+vi.mock("@/lib/useYjsRoom", async () => {
+  const Y = await import("yjs");
+  const doc = new Y.Doc();
+  doc.getText("code").insert(0, "const a = 1");
+  return {
+    useYjsProvider: () => ({ synced: true, on: () => {}, off: () => {} }),
+    useYText: () => doc.getText("code"),
+  };
+});
+
 const storage: Record<string, unknown> = {
-  code: "const a = 1",
   language: "typescript",
   pristine: true,
 };
@@ -98,6 +109,15 @@ describe("structure that axe can only judge page-wide", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "CodeCollab" }),
     ).toBeInTheDocument();
+  });
+
+  it("offers a way back out of a room that isn't the browser's Back button", () => {
+    render(<EditorLayout roomId="room-1" userName="Neeraj" />);
+
+    expect(screen.getByRole("link", { name: "CodeCollab" })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 
   it("keeps the unrunnable Run button focusable and explained", () => {

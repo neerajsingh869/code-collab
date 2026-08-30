@@ -66,5 +66,8 @@ export const USER_COLORS = [
 // Derived from the connection id instead of kept in presence, so every client
 // works out the same colour without it being synced. Distinct for up to six
 // people; after enough joins and leaves two live ids can land on the same one.
+export const colorIndexForConnection = (connectionId: number) =>
+  connectionId % USER_COLORS.length;
+
 export const colorForConnection = (connectionId: number) =>
-  USER_COLORS[connectionId % USER_COLORS.length];
+  USER_COLORS[colorIndexForConnection(connectionId)];

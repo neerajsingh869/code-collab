@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Copy, Check, Play, MessageSquare } from "lucide-react";
 import { useStorage, useMutation, useEventListener } from "@liveblocks/react";
 import { useEditorStore } from "@/store/useEditorStore";
 import { LANGUAGES, STARTER_CODE } from "@/lib/constants";
 import { executeCode } from "@/lib/executeCode";
+import { useYText } from "@/lib/useYjsRoom";
 import { useReturnFocusOnClose } from "@/lib/useReturnFocusOnClose";
 import { transpileTypeScript } from "@/lib/transpileTypeScript";
 import type { Language } from "@/types";
@@ -88,16 +90,24 @@ export default function EditorLayout({ roomId, userName }: Props) {
   });
 
   const language = useStorage((root) => root.language);
-  const code = useStorage((root) => root.code);
+  const isPristine = useStorage((root) => root.pristine);
+  const yText = useYText();
+
+  const setLanguage = useMutation(({ storage }, lang: Language) => {
+    storage.set("language", lang);
+  }, []);
 
   // Only swap the starter if nothing has been written. Rooms predating the
   // pristine flag report undefined and are left alone.
-  const updateLanguage = useMutation(({ storage }, lang: Language) => {
-    if (storage.get("pristine") === true) {
-      storage.set("code", STARTER_CODE[lang]);
+  const handleLanguageChange = (lang: Language) => {
+    if (isPristine === true) {
+      yText.doc?.transact(() => {
+        yText.delete(0, yText.length);
+        yText.insert(0, STARTER_CODE[lang]);
+      });
     }
-    storage.set("language", lang);
-  }, []);
+    setLanguage(lang);
+  };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -106,7 +116,9 @@ export default function EditorLayout({ roomId, userName }: Props) {
   };
 
   const handleRunCode = async () => {
-    if (!code || isRunning) return;
+    // Pulled straight off the document — no local mirror to fall behind it
+    const code = yText.toString();
+    if (!code.trim() || isRunning) return;
     clearOutput();
     setIsRunning(true);
     openOutput();
@@ -139,8 +151,15 @@ export default function EditorLayout({ roomId, userName }: Props) {
   return (
     <div className="h-screen flex flex-col bg-[#0d1117] overflow-hidden">
       <header className="h-12 bg-[#161b22] border-b border-[#30363d] flex items-center px-4 gap-3 flex-shrink-0">
-        <h1 className="text-blue-400 font-semibold text-sm tracking-wide">
-          <span aria-hidden="true">⚡ </span>CodeCollab
+        <h1 className="text-sm tracking-wide">
+          <Link
+            href="/"
+            className="text-blue-400 font-semibold hover:text-blue-300
+                       transition-colors rounded
+                       focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            <span aria-hidden="true">⚡ </span>CodeCollab
+          </Link>
         </h1>
 
         <span className="text-gray-400 text-xs font-mono hidden sm:block">
@@ -156,7 +175,7 @@ export default function EditorLayout({ roomId, userName }: Props) {
         <select
           id="language-select"
           value={language}
-          onChange={(e) => updateLanguage(e.target.value as Language)}
+          onChange={(e) => handleLanguageChange(e.target.value as Language)}
           className="bg-[#21262d] border border-[#30363d] text-gray-300 text-xs
                      rounded px-2 py-1.5 cursor-pointer outline-none
                      focus-visible:ring-2 focus-visible:ring-blue-500"
