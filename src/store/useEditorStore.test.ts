@@ -99,4 +99,26 @@ describe("useEditorStore", () => {
     after.addOutputLine({ type: "log", text: "new room" });
     expect(useEditorStore.getState().outputLines).toHaveLength(1);
   });
+
+  it("keeps the tail of a runaway log and says how much it dropped", () => {
+    // appending copies the array, so an uncapped log is quadratic
+    for (let i = 0; i < 2050; i += 1) {
+      useEditorStore.getState().addOutputLine({ type: "log", text: `line ${i}` });
+    }
+
+    const after = useEditorStore.getState();
+    expect(after.outputLines).toHaveLength(2000);
+    expect(after.outputLines[0].text).toBe("line 50");
+    expect(after.outputLines.at(-1)?.text).toBe("line 2049");
+    expect(after.droppedLines).toBe(50);
+  });
+
+  it("forgets the dropped count when the output is cleared", () => {
+    for (let i = 0; i < 2010; i += 1) {
+      useEditorStore.getState().addOutputLine({ type: "log", text: `${i}` });
+    }
+    useEditorStore.getState().clearOutput();
+
+    expect(useEditorStore.getState().droppedLines).toBe(0);
+  });
 });

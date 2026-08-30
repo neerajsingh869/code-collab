@@ -5,6 +5,7 @@ import { useEditorStore } from "@/store/useEditorStore";
 
 export default function OutputPanel() {
   const outputLines = useEditorStore((s) => s.outputLines);
+  const droppedLines = useEditorStore((s) => s.droppedLines);
   const isRunning = useEditorStore((s) => s.isRunning);
   const clearOutput = useEditorStore((s) => s.clearOutput);
   const toggleOutput = useEditorStore((s) => s.toggleOutput);
@@ -48,6 +49,13 @@ export default function OutputPanel() {
         aria-label="Program output"
         className="flex-1 overflow-y-auto p-4 font-mono text-sm"
       >
+        {/* saying so beats a log that silently starts mid-run */}
+        {droppedLines > 0 && (
+          <div className="leading-7 text-gray-400">
+            {`// ${droppedLines.toLocaleString()} earlier lines dropped`}
+          </div>
+        )}
+
         {outputLines.length === 0 ? (
           <span className="text-gray-400">
             {isRunning ? "// running..." : "// press Run to execute your code"}

@@ -4,6 +4,11 @@ import type { OutputLine, ChatMessage } from "@/types";
 // local-only UI state (panels, output, chat) — kept separate from Liveblocks
 // storage so it never syncs across users
 
+// A run that prints from inside a loop can emit faster than anyone can read.
+// Appending copies the array each time, so an uncapped log is quadratic; this
+// keeps the tail and counts what fell off the front.
+const MAX_OUTPUT_LINES = 2000;
+
 type EditorState = {
   // Panel visibility
   isChatOpen: boolean;
@@ -12,6 +17,7 @@ type EditorState = {
 
   // Code execution output
   outputLines: OutputLine[];
+  droppedLines: number;
   isRunning: boolean;
 
   // Chat messages (received from Liveblocks broadcast events)
@@ -35,6 +41,7 @@ const initialState: EditorState = {
   isOutputOpen: false,
   unreadCount: 0,
   outputLines: [],
+  droppedLines: 0,
   isRunning: false,
   messages: [],
 };
@@ -51,8 +58,16 @@ export const useEditorStore = create<EditorStore>((set) => ({
   openOutput: () => set({ isOutputOpen: true }),
 
   addOutputLine: (line) =>
-    set((s) => ({ outputLines: [...s.outputLines, line] })),
-  clearOutput: () => set({ outputLines: [] }),
+    set((s) => {
+      const lines = [...s.outputLines, line];
+      const overflow = lines.length - MAX_OUTPUT_LINES;
+      if (overflow <= 0) return { outputLines: lines };
+      return {
+        outputLines: lines.slice(overflow),
+        droppedLines: s.droppedLines + overflow,
+      };
+    }),
+  clearOutput: () => set({ outputLines: [], droppedLines: 0 }),
   setIsRunning: (val) => set({ isRunning: val }),
 
   addMessage: (msg) =>
