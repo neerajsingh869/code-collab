@@ -8,10 +8,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    env:
-      # Build-time only: prerendering touches LiveblocksProvider, which just
-      # needs a non-empty key — it never connects to a real room in CI.
-      NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY: pk_test_ci_placeholder
     steps:
       - uses: actions/checkout@v6
 
