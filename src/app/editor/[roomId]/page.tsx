@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { preconnect } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { RoomProvider } from "@liveblocks/react";
 import EditorLayout from "@/components/EditorLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import Providers from "@/app/provider";
+
+// @monaco-editor/loader fetches the editor from here, but only once this
+// route's JS has run. Opening the connection during HTML parse takes the
+// handshake off the critical path.
+const MONACO_CDN = "https://cdn.jsdelivr.net";
 
 export default function EditorPage() {
+  preconnect(MONACO_CDN);
+
   const params = useParams();
   const router = useRouter();
   const roomId = params.roomId as string;
@@ -44,16 +53,18 @@ export default function EditorPage() {
 
   return (
     <ErrorBoundary>
-      <RoomProvider
-        id={roomId}
-        initialPresence={{ name: userName, cursor: null }}
-        initialStorage={{
-          language: "typescript",
-          pristine: true,
-        }}
-      >
-        <EditorLayout roomId={roomId} userName={userName} />
-      </RoomProvider>
+      <Providers>
+        <RoomProvider
+          id={roomId}
+          initialPresence={{ name: userName, cursor: null }}
+          initialStorage={{
+            language: "typescript",
+            pristine: true,
+          }}
+        >
+          <EditorLayout roomId={roomId} userName={userName} />
+        </RoomProvider>
+      </Providers>
     </ErrorBoundary>
   );
 }

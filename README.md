@@ -132,6 +132,41 @@ a file the manual browser audit had missed, because its fallback UI never
 rendered. What is still not covered, since jsdom has neither layout nor CSS: real
 rendered contrast, focus order, and visible focus rings.
 
+## Performance
+
+Measured with Lighthouse against the production build, mobile preset, throttled.
+The landing page went from 98 to 99, and the numbers underneath moved more than
+the score does:
+
+| | before | after |
+|---|---|---|
+| Largest Contentful Paint | 2.5 s | 2.1 s |
+| Speed Index | 1.0 s | 0.8 s |
+| Unused JavaScript | 108 KiB | 50 KiB |
+| Page weight | 246 KiB | 181 KiB |
+| Cumulative Layout Shift | 0 | 0 |
+
+Almost all of that is one mistake. `LiveblocksProvider` was in the root layout,
+which is the obvious place to put a provider and the wrong one here: nothing
+outside a room uses it, so every visitor to the landing page — a form with one
+input — downloaded the realtime client and Yjs with it. That was a 66 KiB chunk
+measuring 89.6% unused. It moved into the editor route, where it belongs.
+
+Monaco is already lazily loaded through `next/dynamic` and fetched from a CDN at
+runtime rather than bundled, which is why the editor route's own JavaScript is
+~133 KiB despite shipping a full code editor. The editor route now issues a
+`preconnect` to that CDN during render, so the TLS handshake is not waiting on
+this route's JavaScript to execute first — a standard win, but I have not
+measured it, so I am not claiming a number.
+
+Two things I looked at and left alone: 13 KiB of polyfills for `Array.prototype.at`
+and friends live inside Next's own precompiled React chunk, so a `browserslist`
+target does not remove them; and the 26 KiB favicon is real weight but not on the
+critical path.
+
+Interaction latency is unmeasured. Total Blocking Time is 40–50 ms, which is the
+lab proxy for it, but a real INP number needs field data.
+
 ## Auth, and what it does and does not fix
 
 The browser holds no Liveblocks key. `src/app/api/liveblocks-auth/route.ts` mints

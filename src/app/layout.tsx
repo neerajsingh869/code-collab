@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Providers from "./provider";
 
 export const metadata: Metadata = {
   title: "CodeCollab — Real-time Collaborative Editor",
@@ -15,8 +14,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {/* Providers wraps everything so Liveblocks hooks work anywhere in the tree */}
-        <Providers>{children}</Providers>
+        {/* LiveblocksProvider deliberately isn't here: nothing outside a room
+            uses it, and in the root layout it put the realtime client and Yjs
+            in the bundle for the landing page too */}
+        {children}
       </body>
     </html>
   );
